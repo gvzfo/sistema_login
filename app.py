@@ -2,6 +2,7 @@ from bottle import Bottle, route, run
 from bottle import request, template
 from bottle import static_file, get
 from bottle import error
+import os
 
 
 # static routes
@@ -22,9 +23,13 @@ def fonts(filename):
     return static_file(filename, root='static/fonts')
 
 
+# @route('/')
+# def index():
+#     return '<h1>Hello world</h1>'
+
 @route('/')
 def index():
-    return '<h1>Hello world</h1>'
+    return template('index')
 
 @route('/login')# @get('/login')
 def login():
@@ -51,4 +56,7 @@ def error404(error):
 
 
 if __name__ == '__main__':
-    run(host='localhost', port=8080, debug=True, reloader=True)
+    if os.environ.get('APP_LOCATION')== 'heroku':
+        run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+    else:
+        run(host='localhost', port=8080, debug=True, reloader=True)
