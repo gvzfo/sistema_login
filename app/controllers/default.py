@@ -1,7 +1,7 @@
 from app import app
 # from app import create_session
 from app.models.tables import User
-from bottle import request, template, static_file
+from bottle import request, template, static_file, redirect
 
 
 
@@ -23,27 +23,15 @@ def fonts(filename):
     return static_file(filename, root='app/static/fonts')
 
 
-# @route('/')
-# def index():
-#     return '<h1>Hello world</h1>'
-
-# @route('/')
-# def index():
-#     return template('index')
 
 @app.route('/')# @get('/login')
 def login():
-    return template('login')
-
-@app.route('/login')# @get('/login')
-def login():
-    return template('login')
-
+    return template('login' , sucesso = True)
 
 
 @app.route('/cadastro')
 def cadastro():
-    return template('cadastro')
+    return template('cadastro', existe_username=False)
 
 
 @app.route('/cadastro', method='POST')
@@ -51,30 +39,37 @@ def acao_cadastro(db):
 
     username = request.forms.get('username')
     password = request.forms.get('password')
-    new_user = User(username, password)
-    db.add(new_user)
-    # session = create_session()
-    # new_user = User(username, password)
-    # session.add(new_user)
-    # session.commit()
-    # insert_user(username, password)
-    return template('verificacao_cadastro', nome=username)
+    try:
+        db.query(User).filter(User.username == username).one()
+        existe_username = True
+    except:
+        existe_username = False
+    if not existe_username:
+        new_user = User(username, password)
+        db.add(new_user)
+        sucesso = True
+        return redirect('/usuarios')
+    return template('cadastro', existe_username=True)
 
 
 
-# def check_login(username, password):
-#     d = {'marcos':'python', 'joao':'java','pedro':'go'}
-#     return True if d[username] == password else False
-#     if username in d.keys() and d[username] == password:
-#         return True
-#     return False
 
-
-@app.route('/', method='POST') # @post('/login')
-def acao_login():
+@app.route('/login', method='POST') # @post('/login')
+def acao_login(db):
     username = request.forms.get('username')
     password = request.forms.get('password')
-    return template('verificacao_login', sucesso=True)
+    result = db.query(User).filter((User.username == username) & (User.password == password)).all()
+    # sucesso = False if not result else True
+    if result:
+        return redirect('/usuarios')
+    return template('login', sucesso=False)
+
+
+@app.route('/usuarios')
+def usuarios(db):
+    usuarios = db.query(User).all()
+    return template('lista_usuarios', usuarios=usuarios)
+
 
 @app.error(404)
 def error404(error):
